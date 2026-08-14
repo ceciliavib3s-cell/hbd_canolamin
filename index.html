@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>채민이의 생일파티에 지각한 채민이!</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      margin: 0;
+      padding: 10px;
+      background-color: #ffeef8;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+      user-select: none;
+      touch-action: manipulation;
+    }
+    h1 {
+      color: #ff4757;
+      font-size: 22px;
+      margin-top: 5px;
+      margin-bottom: 10px;
+      text-align: center;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    }
+    #gameContainer {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      height: 320px;
+      background-color: #ffffff;
+      background-image: url('bg.png'), url('bg.jpg'), linear-gradient(to bottom, #fff5f8, #ffffff);
+      background-size: cover;
+      background-position: center;
+      border-bottom: 4px solid #ff6b81;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(255, 107, 129, 0.2);
+      border-radius: 16px;
+      cursor: pointer;
+      touch-action: none;
+    }
+    /* 발레리나 채민 (주인공) */
+    #player {
+      position: absolute;
+      bottom: 0px;
+      left: 60px;
+      width: 70px;
+      height: 90px;
+      background-image: url('chaemin.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: bottom center;
+      z-index: 10;
+    }
+    /* 장애물 */
+    .obstacle {
+      position: absolute;
+      bottom: 0px;
+      width: 55px;
+      height: 75px;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: bottom center;
+      z-index: 5;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15));
+    }
+    /* 엔딩 연출용 요소들 */
+    #endingArea {
+      display: none;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: 20;
+    }
+    /* 성공 엔딩 시 서정X채민 만나기 */
+    #meetingGroup {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: flex-end;
+      gap: 0px;
+      z-index: 30;
+    }
+    #chaeminEnding {
+      width: 120px;
+      height: 150px;
+      background-image: url('chaemin.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: bottom center;
+      filter: drop-shadow(0 6px 10px rgba(0,0,0,0.2));
+    }
+    #seojeongEnding {
+      width: 130px;
+      height: 160px;
+      background-image: url('seojeong.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: bottom center;
+      filter: drop-shadow(0 6px 10px rgba(0,0,0,0.2));
+    }
+
+    /* 포기 시: 채민이 없이 서정이만 있는 엔딩 */
+    #giveupMeetingGroup {
+      display: none;
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 30;
+    }
+
+    /* 엔딩 장애물 모음 (바닥 전체에 나열) */
+    .ending-obstacles {
+      position: absolute;
+      bottom: 10px;
+      width: 100%;
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-end;
+      padding: 0 5px;
+      z-index: 25;
+      opacity: 0.85;
+    }
+    .ending-obs-item {
+      width: 32px;
+      height: 45px;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: bottom center;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+    }
+
+    /* 모달 POPUP 공통 오버레이 */
+    .overlay-modal {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.65);
+      z-index: 50;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+      animation: fadeIn 0.3s ease;
+    }
+    /* 시작 오버레이 */
+    #startModal {
+      display: flex;
+    }
+
+    .modal-box {
+      background: #ffffff;
+      padding: 24px;
+      border-radius: 20px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      max-width: 85%;
+      width: 320px;
+    }
+    .modal-title {
+      font-size: 20px;
+      font-weight: bold;
+      color: #ff4757;
+      margin-bottom: 8px;
+    }
+    .modal-desc {
+      font-size: 14px;
+      color: #57606f;
+      margin-bottom: 20px;
+      line-height: 1.4;
+    }
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+    .btn {
+      flex: 1;
+      padding: 12px 16px;
+      font-size: 15px;
+      font-weight: bold;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+    .btn:active {
+      transform: scale(0.95);
+    }
+    .btn-start {
+      background-color: #ff4757;
+      color: #ffffff;
+      font-size: 17px;
+      padding: 14px 28px;
+      box-shadow: 0 4px 12px rgba(255, 71, 87, 0.4);
+    }
+    .btn-retry {
+      background-color: #ff4757;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(255, 71, 87, 0.4);
+    }
+    .btn-giveup {
+      background-color: #f1f2f6;
+      color: #747d8c;
+    }
+
+    #message {
+      margin-top: 15px;
+      font-size: 22px;
+      font-weight: bold;
+      color: #ff4757;
+      text-align: center;
+      min-height: 35px;
+    }
+    
+    /* 하단 QR코드 안내 영역 */
+    #qrContainer {
+      display: none;
+      margin-top: 15px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.8s ease-in-out;
+    }
+    #qrContainer img {
+      width: 140px;
+      height: 140px;
+      border-radius: 12px;
+      border: 3px solid #ff6b81;
+      box-shadow: 0 6px 15px rgba(255, 107, 129, 0.25);
+      background-color: #ffffff;
+      padding: 5px;
+    }
+    #qrCaption {
+      margin-top: 8px;
+      font-size: 14px;
+      color: #57606f;
+      font-weight: 600;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    #instruction {
+      margin-bottom: 10px;
+      color: #747d8c;
+      font-size: 14px;
+      font-weight: 500;
+      text-align: center;
+    }
+
+    /* 사운드 온/오프 버튼 스타일 */
+    #soundBtn {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      background-color: #ffffff;
+      border: 2px solid #ff6b81;
+      color: #ff4757;
+      border-radius: 20px;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 음소거 토글 버튼 -->
+  <button id="soundBtn">🔊 SOUND ON</button>
+
+  <!-- 오디오 태그 분리 -->
+  <audio id="runBgm" src="bgm.mp3" loop preload="auto"></audio>
+  <audio id="failSound" src="fail.mp3" preload="auto"></audio>
+  <audio id="successBgm" src="success.mp3" preload="auto"></audio>
+
+  <h1>🩰 채민이의 생일파티에 지각한 채민이! 🎂</h1>
+  <div id="instruction">시작 버튼을 누르면 BGM과 함께 게임이 시작됩니다!</div>
+  
+  <div id="gameContainer">
+    <div id="player"></div>
+    
+    <!-- 엔딩 화면 -->
+    <div id="endingArea">
+      <!-- 성공 시 -->
+      <div id="meetingGroup">
+        <div id="chaeminEnding"></div>
+        <div id="seojeongEnding"></div>
+      </div>
+      <!-- 포기 시: 채민이 없이 서정이 혼자 있음 -->
+      <div id="giveupMeetingGroup">
+        <div id="seojeongEnding" style="margin: 0 auto;"></div>
+      </div>
+      <div class="ending-obstacles" id="endingObsContainer"></div>
+    </div>
+
+    <!-- 1. 게임 시작 전 모달 -->
+    <div id="startModal" class="overlay-modal">
+      <div class="modal-box">
+        <div class="modal-title">🩰 채민이의 생일파티! 🎂</div>
+        <div class="modal-desc">지각하기 전에 얼른 달려가야 해요!<br>준비되셨나요?</div>
+        <button id="startBtn" class="btn btn-start">🎮 시작하기</button>
+      </div>
+    </div>
+
+    <!-- 2. 실패 시 뜨는 모달 POPUP -->
+    <div id="failModal" class="overlay-modal">
+      <div class="modal-box">
+        <div class="modal-title">💥 앗! 장애물에 걸렸어요!</div>
+        <div class="modal-desc">지각하기 직전이에요!<br>다시 도전해 볼까요?</div>
+        <div class="btn-group">
+          <button id="retryBtn" class="btn btn-retry">🏃 다시 뛰기</button>
+          <button id="giveupBtn" class="btn btn-giveup">🏳️ 포기하기</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  
+  <div id="message"></div>
+
+  <!-- 성공 시만 뜨는 QR코드 -->
+  <div id="qrContainer">
+    <img src="qr.png" alt="선물 QR코드" id="qrImage">
+    <div id="qrCaption">🎁 생일 선물 QR코드를 스캔해보세요! 🎁</div>
+  </div>
+
+  <script>
+    const player = document.getElementById('player');
+    const container = document.getElementById('gameContainer');
+    const message = document.getElementById('message');
+    const endingArea = document.getElementById('endingArea');
+    const meetingGroup = document.getElementById('meetingGroup');
+    const giveupMeetingGroup = document.getElementById('giveupMeetingGroup');
+    const endingObsContainer = document.getElementById('endingObsContainer');
+    const qrContainer = document.getElementById('qrContainer');
+    
+    const startModal = document.getElementById('startModal');
+    const failModal = document.getElementById('failModal');
+    const startBtn = document.getElementById('startBtn');
+    const retryBtn = document.getElementById('retryBtn');
+    const giveupBtn = document.getElementById('giveupBtn');
+
+    const runBgm = document.getElementById('runBgm');
+    const failSound = document.getElementById('failSound');
+    const successBgm = document.getElementById('successBgm');
+    const soundBtn = document.getElementById('soundBtn');
+
+    let isJumping = false;
+    let nextObsIndex = 0;
+    let clearedCount = 0;
+    let activeObstaclesCount = 0;
+    let gameStarted = false;
+    let gameOver = false;
+    let gameWon = false;
+    let soundStarted = false;
+    let isMuted = false;
+    let spawnTimeoutId = null;
+
+    // 사운드 시작 함수
+    function startAudio() {
+      if (!soundStarted && !isMuted) {
+        runBgm.play().then(() => {
+          soundStarted = true;
+        }).catch(e => {
+          console.log("자동재생 제약:", e);
+        });
+      }
+    }
+
+    // [시작하기] 버튼 클릭 시 게임 시작
+    startBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      startModal.style.display = 'none';
+      gameStarted = true;
+      startAudio();
+      spawnObstacle();
+    });
+
+    // 스마트폰 및 아이패드 전용 터치 / 클릭 이벤트를 하나로 통합
+    function handleInput(e) {
+      if (!gameStarted || gameOver || gameWon) return; 
+      if (e) {
+        if (e.type === 'touchstart') {
+          if (e.cancelable) e.preventDefault();
+        }
+      }
+      startAudio();
+      jump();
+    }
+
+    // 아이패드/휴대폰용 터치 이벤트 등록
+    window.addEventListener('touchstart', handleInput, { passive: false });
+    window.addEventListener('pointerdown', (e) => {
+      if (gameStarted) startAudio();
+    });
+    window.addEventListener('click', (e) => {
+      if (gameStarted) startAudio();
+    });
+
+    // 스페이스바 대응
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        handleInput(e);
+      }
+    });
+
+    // 게임 재시작 함수 (시작 모달을 거치지 않고 바로 시작)
+    function resetAndRestart() {
+      // 1. 예약된 장애물 스폰 취소
+      if (spawnTimeoutId) {
+        clearTimeout(spawnTimeoutId);
+        spawnTimeoutId = null;
+      }
+
+      // 2. 화면에 남아있는 장애물 제거
+      document.querySelectorAll('.obstacle').forEach(obs => obs.remove());
+
+      // 3. 상태 변수 초기화
+      isJumping = false;
+      nextObsIndex = 0;
+      clearedCount = 0;
+      activeObstaclesCount = 0;
+      gameOver = false;
+      gameWon = false;
+      gameStarted = true;
+
+      // 4. 모달 및 엔딩 요소 숨김/초기화
+      failModal.style.display = 'none';
+      startModal.style.display = 'none';
+      endingArea.style.display = 'none';
+      qrContainer.style.display = 'none';
+      message.innerHTML = '';
+
+      // 5. 플레이어 표시 및 위치 리셋
+      player.style.display = 'block';
+      player.style.bottom = '0px';
+
+      // 6. 음향 재생 및 첫 장애물 생성
+      runBgm.currentTime = 0;
+      if (!isMuted) {
+        runBgm.play().catch(e => console.log("자동재생 제한:", e));
+        soundStarted = true;
+      }
+
+      spawnObstacle();
+    }
+
+    // 다시 뛰기 버튼 클릭 이벤트
+    retryBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      resetAndRestart();
+    });
+
+    // 포기하기 -> 채민이 없는 채민이의 생일파티 (QR 없음)
+    giveupBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      failModal.style.display = 'none';
+      triggerEnding(true);
+    });
+
+    // 전체 음소거 버튼
+    soundBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      isMuted = !isMuted;
+      if (isMuted) {
+        runBgm.pause();
+        failSound.pause();
+        successBgm.pause();
+        soundBtn.innerText = "🔇 SOUND OFF";
+      } else {
+        soundBtn.innerText = "🔊 SOUND ON";
+        if (gameStarted && !gameOver && !gameWon) {
+          runBgm.play();
+          soundStarted = true;
+        } else if (gameWon) {
+          successBgm.play();
+        }
+      }
+    });
+
+    const obstacleImages = [];
+    for (let i = 1; i <= 17; i++) {
+      obstacleImages.push(`obs${i}.png`);
+    }
+
+    // 점프 로직
+    function jump() {
+      if (isJumping || !gameStarted || gameOver || gameWon) return;
+      isJumping = true;
+      let jumpHeight = 0;
+      
+      let upInterval = setInterval(() => {
+        if (jumpHeight >= 140) {
+          clearInterval(upInterval);
+          let downInterval = setInterval(() => {
+            if (jumpHeight <= 0) {
+              clearInterval(downInterval);
+              isJumping = false;
+              player.style.bottom = '0px';
+            }
+            jumpHeight -= 10;
+            player.style.bottom = Math.max(0, jumpHeight) + 'px';
+          }, 14);
+        }
+        jumpHeight += 12;
+        player.style.bottom = jumpHeight + 'px';
+      }, 14);
+    }
+
+    // 장애물 스폰
+    function spawnObstacle() {
+      if (!gameStarted || gameOver || gameWon || nextObsIndex >= obstacleImages.length) return;
+
+      const currentImg = obstacleImages[nextObsIndex];
+      nextObsIndex++;
+      activeObstaclesCount++;
+
+      const obstacle = document.createElement('div');
+      obstacle.classList.add('obstacle');
+      obstacle.style.backgroundImage = `url('${currentImg}')`;
+
+      const containerWidth = container.clientWidth || 800;
+      let obstacleLeft = containerWidth;
+      obstacle.style.left = obstacleLeft + 'px';
+      container.appendChild(obstacle);
+
+      let moveSpeed = 5.5;
+
+      let moveInterval = setInterval(() => {
+        if (gameOver || gameWon) {
+          clearInterval(moveInterval);
+          obstacle.remove();
+          return;
+        }
+
+        obstacleLeft -= moveSpeed;
+        obstacle.style.left = obstacleLeft + 'px';
+
+        // 부딪혔을 때 (실패 연출)
+        let playerBottom = parseInt(player.style.bottom || '0');
+        if (obstacleLeft > 50 && obstacleLeft < 100 && playerBottom < 45) {
+          gameOver = true;
+          clearInterval(moveInterval);
+          
+          runBgm.pause();
+          runBgm.currentTime = 0;
+          
+          if (!isMuted) {
+            failSound.currentTime = 0;
+            failSound.play();
+          }
+
+          // 실패 모달 ([다시 뛰기], [포기하기]) 노출
+          failModal.style.display = 'flex';
+        }
+
+        // 통과했을 때
+        if (obstacleLeft < -60) {
+          clearInterval(moveInterval);
+          obstacle.remove();
+          activeObstaclesCount--;
+          clearedCount++;
+
+          if (clearedCount >= obstacleImages.length && activeObstaclesCount === 0) {
+            triggerEnding(false);
+          }
+        }
+      }, 12);
+
+      if (nextObsIndex < obstacleImages.length) {
+        let safeSpawnDelay = Math.random() * 600 + 1300; 
+        spawnTimeoutId = setTimeout(spawnObstacle, safeSpawnDelay);
+      }
+    }
+
+    // 성공 및 포기 엔딩 연출
+    function triggerEnding(isGiveUp = false) {
+      gameWon = true;
+      player.style.display = 'none';
+      endingArea.style.display = 'block';
+
+      runBgm.pause();
+      runBgm.currentTime = 0;
+
+      if (!isMuted) {
+        successBgm.currentTime = 0;
+        successBgm.play();
+      }
+
+      endingObsContainer.innerHTML = '';
+      obstacleImages.forEach(imgName => {
+        const obsEl = document.createElement('div');
+        obsEl.classList.add('ending-obs-item');
+        obsEl.style.backgroundImage = `url('${imgName}')`;
+        endingObsContainer.appendChild(obsEl);
+      });
+
+      if (isGiveUp) {
+        // 포기 시 연출: 채민이는 안 보이고 서정이만 있음
+        meetingGroup.style.display = 'none';
+        giveupMeetingGroup.style.display = 'flex';
+        message.innerHTML = "😱 채민이 없는 채민이의 생일파티...";
+        qrContainer.style.display = 'none'; // QR 안 보임
+      } else {
+        // 클리어 시 연출
+        meetingGroup.style.display = 'flex';
+        giveupMeetingGroup.style.display = 'none';
+        message.innerHTML = "🎉🎉 채민아 생일 축하해! 🎉🎉";
+        qrContainer.style.display = 'flex'; // QR 코드 표시
+      }
+    }
+  </script>
+</body>
+</html>
